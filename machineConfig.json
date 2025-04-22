@@ -1,0 +1,11 @@
+{
+    "machineId": "sampleMachine",
+    "initialState": "START",
+    "endStates": ["END"],
+    "states": ["START", "MIDDLE", "END"],
+    "transitions": [
+      { "source": "START", "target": "MIDDLE", "event": "TO_MIDDLE" },
+      { "source": "MIDDLE", "target": "END", "event": "TO_END" }
+    ]
+  }
+  
