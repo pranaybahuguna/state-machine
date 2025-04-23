@@ -1,18 +1,15 @@
 @RestController
-@RequestMapping("/statemachine")
+@RequestMapping("/workflow")
+@RequiredArgsConstructor
 public class StateMachineController {
 
     private final DynamicStateMachineBuilder stateMachineBuilder;
 
-    public StateMachineController(DynamicStateMachineBuilder builder) {
-        this.stateMachineBuilder = builder;
-    }
-
     @PostMapping("/start")
-    public ResponseEntity<String> start(@RequestBody StateMachineConfigDTO config) {
+    public ResponseEntity<String> startWorkflow(@RequestBody StateMachineDefinition definition) {
         try {
-            stateMachineBuilder.buildStateMachine(config);
-            return ResponseEntity.ok("State machine started");
+            StateMachine<String, String> machine = stateMachineBuilder.build(definition);
+            return ResponseEntity.ok("Workflow started in state: " + machine.getState().getId());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }

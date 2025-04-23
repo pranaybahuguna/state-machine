@@ -1,40 +1,34 @@
-@Service
+@Component
+@RequiredArgsConstructor
 public class DynamicStateMachineBuilder {
 
     private final StateMachineFactory<String, String> stateMachineFactory;
-    private final StateMachineRuntimePersister<String, String, String> runtimePersister;
+    private final JpaPersistingStateMachineInterceptor<String, String> persister;
 
-    public DynamicStateMachineBuilder(
-        ObjectStateMachineFactory factory,
-        StateMachineRuntimePersister<String, String, String> runtimePersister) {
-        this.stateMachineFactory = factory;
-        this.runtimePersister = runtimePersister;
-    }
-
-    public StateMachine<String, String> buildStateMachine(StateMachineConfigDTO config) throws Exception {
+    public StateMachine<String, String> build(StateMachineDefinition definition) throws Exception {
         StateMachineBuilder.Builder<String, String> builder = StateMachineBuilder.builder();
-
-        builder.configureConfiguration()
-            .withConfiguration()
-            .machineId(config.machineId)
-            .listener(new StateMachineListenerAdapter<>())
-            .and()
-            .withPersistence()
-            .runtimePersister(runtimePersister);
 
         builder.configureStates()
             .withStates()
-            .initial(config.initialState)
-            .states(new HashSet<>(config.states))
-            .end(config.endStates.toArray(new String[0]));
+            .initial(definition.getInitialState())
+            .states(new HashSet<>(definition.getStates()))
+            .end(definition.getEndStates().toArray(new String[0]));
 
-        StateMachineTransitionConfigurer<String, String> transitions = builder.configureTransitions().withExternal();
-        for (TransitionDTO t : config.transitions) {
-            transitions.source(t.source).target(t.target).event(t.event).and();
+        StateMachineTransitionConfigurer<String, String> transitions = builder.configureTransitions();
+
+        for (TransitionDefinition t : definition.getTransitions()) {
+            transitions
+                .withExternal()
+                .source(t.getSource())
+                .target(t.getTarget())
+                .event(t.getEvent());
         }
 
         StateMachine<String, String> machine = builder.build();
+        machine.getStateMachineAccessor()
+            .doWithAllRegions(accessor -> accessor.addStateMachineInterceptor(persister));
         machine.start();
+
         return machine;
     }
 }
